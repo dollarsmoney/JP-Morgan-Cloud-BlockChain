@@ -1,0 +1,51 @@
+// Blockchain service — owns the `blockchain` Postgres schema in Supabase.
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("BLOCKCHAIN_DATABASE_URL")
+  directUrl = env("BLOCKCHAIN_DIRECT_URL")
+  schemas   = ["blockchain"]
+}
+
+model Block {
+  id           String   @id @default(uuid())
+  index        Int      @unique
+  timestamp    DateTime
+  previousHash String   @map("previous_hash")
+  hash         String   @unique
+  nonce        BigInt
+  difficulty   Int
+  merkleRoot   String   @map("merkle_root")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  transactions ChainTx[]
+
+  @@index([index])
+  @@map("blocks")
+  @@schema("blockchain")
+}
+
+model ChainTx {
+  id        String   @id @default(uuid())
+  blockId   String   @map("block_id")
+  sender    String
+  receiver  String
+  amount    Decimal  @db.Decimal(36, 18)
+  fee       Decimal  @default(0) @db.Decimal(36, 18)
+  signature String?
+  txHash    String   @unique @map("tx_hash")
+  timestamp DateTime
+
+  block Block @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([sender])
+  @@index([receiver])
+  @@index([txHash])
+  @@map("chain_transactions")
+  @@schema("blockchain")
+}

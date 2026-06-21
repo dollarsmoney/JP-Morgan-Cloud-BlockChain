@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package blockchain;
+
+service BlockchainService {
+  rpc SubmitTransaction(SubmitTxRequest) returns (SubmitTxResponse);
+  rpc MineBlock(MineRequest) returns (Block);
+  rpc GetChain(GetChainRequest) returns (Chain);
+  rpc ValidateChain(ValidateRequest) returns (ValidateResponse);
+  rpc GetBalance(ChainBalanceRequest) returns (ChainBalance);
+  rpc GetBlock(GetBlockRequest) returns (Block);
+}
+
+message ChainTransaction {
+  string sender = 1;
+  string receiver = 2;
+  string amount = 3;
+  string fee = 4;
+  string signature = 5;
+  string tx_hash = 6;
+  string timestamp = 7;
+}
+
+message Block {
+  int32 index = 1;
+  string timestamp = 2;
+  string previous_hash = 3;
+  string hash = 4;
+  int64 nonce = 5;
+  int32 difficulty = 6;
+  string merkle_root = 7;
+  repeated ChainTransaction transactions = 8;
+}
+
+message SubmitTxRequest {
+  string sender = 1;
+  string receiver = 2;
+  string amount = 3;
+  string fee = 4;
+  string signature = 5;
+  string tx_hash = 6;
+}
+
+message SubmitTxResponse {
+  bool accepted = 1;
+  string tx_hash = 2;
+  int32 mempool_size = 3;
+}
+
+message MineRequest {
+  string miner_address = 1;
+}
+
+message GetChainRequest {
+  int32 limit = 1;
+}
+
+message Chain {
+  repeated Block blocks = 1;
+  int32 length = 2;
+}
+
+message ValidateRequest {}
+
+message ValidateResponse {
+  bool valid = 1;
+  string message = 2;
+}
+
+message ChainBalanceRequest {
+  string address = 1;
+}
+
+message ChainBalance {
+  string address = 1;
+  string balance = 2;
+}
+
+message GetBlockRequest {
+  int32 index = 1;
+}

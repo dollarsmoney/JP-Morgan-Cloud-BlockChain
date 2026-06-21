@@ -1,0 +1,31 @@
+// Audit service — owns the `audit` Postgres schema in Supabase. Append-only sink.
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("AUDIT_DATABASE_URL")
+  directUrl = env("AUDIT_DIRECT_URL")
+  schemas   = ["audit"]
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?  @map("actor_id")
+  service   String
+  action    String
+  resource  String?
+  payload   Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([actorId])
+  @@index([service])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+  @@schema("audit")
+}

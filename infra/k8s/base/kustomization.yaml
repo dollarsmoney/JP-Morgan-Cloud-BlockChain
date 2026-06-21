@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: blockchain-fintech
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - rbac.yaml
+  - configmap.yaml
+  # Real secrets live in the gitignored secret.local.yaml (copy from secret.example.yaml).
+  - secret.local.yaml
+  - networkpolicy.yaml
+  - poddisruptionbudget.yaml
+  - ingress.yaml
+  - services/auth.yaml
+  - services/user.yaml
+  - services/wallet.yaml
+  - services/blockchain.yaml
+  - services/transaction.yaml
+  - services/notification.yaml
+  - services/audit.yaml
+  - services/api-gateway.yaml
+  - services/frontend.yaml
+
+commonLabels:
+  app.kubernetes.io/part-of: blockchain-fintech

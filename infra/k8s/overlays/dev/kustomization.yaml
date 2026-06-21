@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: blockchain-fintech
+
+resources:
+  - ../../base
+
+# Replace ECR_REGISTRY/* placeholders with the real ECR registry + a dev tag.
+images:
+  - { name: ECR_REGISTRY/bcf-auth, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-auth, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-user, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-user, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-wallet, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-wallet, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-blockchain, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-blockchain, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-transaction, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-transaction, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-notification, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-notification, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-audit, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-audit, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-api-gateway, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-api-gateway, newTag: dev }
+  - { name: ECR_REGISTRY/bcf-frontend, newName: ACCOUNT.dkr.ecr.REGION.amazonaws.com/bcf-frontend, newTag: dev }
+
+# Smaller footprint for dev.
+patches:
+  - target: { kind: Deployment, labelSelector: 'app.kubernetes.io/part-of=blockchain-fintech' }
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target: { kind: HorizontalPodAutoscaler, labelSelector: 'app.kubernetes.io/part-of=blockchain-fintech' }
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 3

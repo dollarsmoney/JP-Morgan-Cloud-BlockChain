@@ -1,0 +1,182 @@
+name: blockchain-fintech
+
+# Shared environment overrides that point services at the in-network hostnames.
+# These override the localhost defaults from .env (loaded via env_file).
+x-app-env: &app-env
+  NODE_ENV: production
+  REDIS_URL: redis://redis:6379
+  KAFKA_BROKERS: kafka:9092
+  OTEL_DISABLED: "false"
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+  CORS_ORIGINS: http://localhost:3000
+  AUTH_GRPC_TARGET: auth:50051
+  USER_GRPC_TARGET: user:50052
+  WALLET_GRPC_TARGET: wallet:50053
+  BLOCKCHAIN_GRPC_TARGET: blockchain:50054
+  TRANSACTION_GRPC_TARGET: transaction:50055
+  NOTIFICATION_GRPC_TARGET: notification:50056
+  AUDIT_GRPC_TARGET: audit:50057
+
+x-svc-defaults: &svc-defaults
+  env_file: [.env]
+  restart: unless-stopped
+  depends_on:
+    redis: { condition: service_healthy }
+    kafka: { condition: service_started }
+  networks: [bcnet]
+
+services:
+  # ---------------- Infrastructure ----------------
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [bcnet]
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks: [bcnet]
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    depends_on: [zookeeper]
+    ports: ["9092:9092"]
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks: [bcnet]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686" # UI
+      - "4318:4318"   # OTLP HTTP
+    networks: [bcnet]
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes:
+      - ./infra/monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/monitoring/prometheus/rules:/etc/prometheus/rules:ro
+    ports: ["9090:9090"]
+    networks: [bcnet]
+
+  loki:
+    image: grafana/loki:3.1.0
+    command: ["-config.file=/etc/loki/loki-config.yml"]
+    volumes:
+      - ./infra/monitoring/loki/loki-config.yml:/etc/loki/loki-config.yml:ro
+    ports: ["3100:3100"]
+    networks: [bcnet]
+
+  promtail:
+    image: grafana/promtail:3.1.0
+    command: ["-config.file=/etc/promtail/promtail-config.yml"]
+    volumes:
+      - ./infra/monitoring/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on: [loki]
+    networks: [bcnet]
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports: ["3001:3000"]
+    depends_on: [prometheus, loki, jaeger]
+    networks: [bcnet]
+
+  # ---------------- Application services ----------------
+  auth:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/auth/Dockerfile }
+    environment: *app-env
+    ports: ["50051:50051", "5051:5051"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5051/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/user/Dockerfile }
+    environment: *app-env
+    ports: ["50052:50052", "5052:5052"]
+
+  wallet:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/wallet/Dockerfile }
+    environment: *app-env
+    ports: ["50053:50053", "5053:5053"]
+
+  blockchain:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/blockchain/Dockerfile }
+    environment: *app-env
+    ports: ["50054:50054", "5054:5054"]
+
+  transaction:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/transaction/Dockerfile }
+    environment: *app-env
+    ports: ["50055:50055", "5055:5055"]
+    depends_on:
+      redis: { condition: service_healthy }
+      kafka: { condition: service_started }
+      wallet: { condition: service_started }
+
+  notification:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/notification/Dockerfile }
+    environment: *app-env
+    ports: ["50056:50056", "5056:5056"]
+
+  audit:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/audit/Dockerfile }
+    environment: *app-env
+    ports: ["50057:50057", "5057:5057"]
+
+  api-gateway:
+    <<: *svc-defaults
+    build: { context: ., dockerfile: services/api-gateway/Dockerfile }
+    environment: *app-env
+    ports: ["4000:4000"]
+    depends_on:
+      redis: { condition: service_healthy }
+      kafka: { condition: service_started }
+      auth: { condition: service_started }
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:4000/api/v1
+    restart: unless-stopped
+    ports: ["3000:3000"]
+    depends_on: [api-gateway]
+    networks: [bcnet]
+
+networks:
+  bcnet:
+    driver: bridge

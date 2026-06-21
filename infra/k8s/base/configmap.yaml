@@ -1,0 +1,38 @@
+# Non-secret shared configuration. Secrets (DATABASE_URLs, JWT, Supabase keys) live
+# in the Secret (see secret.example.yaml / External Secrets in prod).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bcf-config
+  namespace: blockchain-fintech
+data:
+  NODE_ENV: 'production'
+  LOG_LEVEL: 'info'
+  KAFKA_BROKERS: 'kafka-bootstrap.kafka.svc.cluster.local:9092'
+  KAFKA_CLIENT_ID: 'blockchain-fintech'
+  REDIS_URL: 'redis://redis-master.redis.svc.cluster.local:6379'
+  OTEL_EXPORTER_OTLP_ENDPOINT: 'http://jaeger-collector.observability.svc.cluster.local:4318'
+  OTEL_SERVICE_NAMESPACE: 'blockchain-fintech'
+  PROMETHEUS_ENABLED: 'true'
+  SUPABASE_AVATAR_BUCKET: 'avatars'
+  CORS_ORIGINS: 'https://app.blockchain-fintech.example.com'
+  RATE_LIMIT_WINDOW_MS: '60000'
+  RATE_LIMIT_MAX: '120'
+  BLOCKCHAIN_DIFFICULTY: '4'
+  BLOCKCHAIN_MINING_REWARD: '50'
+  BLOCKCHAIN_BLOCK_TX_LIMIT: '10'
+  # Internal gRPC targets (ClusterIP service DNS).
+  AUTH_GRPC_ADDR: '0.0.0.0:50051'
+  USER_GRPC_ADDR: '0.0.0.0:50052'
+  WALLET_GRPC_ADDR: '0.0.0.0:50053'
+  BLOCKCHAIN_GRPC_ADDR: '0.0.0.0:50054'
+  TRANSACTION_GRPC_ADDR: '0.0.0.0:50055'
+  NOTIFICATION_GRPC_ADDR: '0.0.0.0:50056'
+  AUDIT_GRPC_ADDR: '0.0.0.0:50057'
+  AUTH_GRPC_TARGET: 'auth:50051'
+  USER_GRPC_TARGET: 'user:50052'
+  WALLET_GRPC_TARGET: 'wallet:50053'
+  BLOCKCHAIN_GRPC_TARGET: 'blockchain:50054'
+  TRANSACTION_GRPC_TARGET: 'transaction:50055'
+  NOTIFICATION_GRPC_TARGET: 'notification:50056'
+  AUDIT_GRPC_TARGET: 'audit:50057'

@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: blockchain-fintech
+  namespace: argocd
+spec:
+  description: BlockChain Fintech Platform
+  sourceRepos:
+    - 'https://github.com/YOUR_ORG/blockchain-fintech.git'
+  destinations:
+    - namespace: blockchain-fintech
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'

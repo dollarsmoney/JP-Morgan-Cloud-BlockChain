@@ -1,0 +1,39 @@
+// Wallet service — owns the `wallets` Postgres schema in Supabase.
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("WALLET_DATABASE_URL")
+  directUrl = env("WALLET_DIRECT_URL")
+  schemas   = ["wallets"]
+}
+
+enum WalletStatus {
+  ACTIVE
+  FROZEN
+  CLOSED
+
+  @@schema("wallets")
+}
+
+model Wallet {
+  id        String       @id @default(uuid())
+  userId    String       @map("user_id")
+  address   String       @unique
+  publicKey String       @map("public_key")
+  label     String       @default("Primary Wallet")
+  balance   Decimal      @default(0) @db.Decimal(36, 18)
+  currency  String       @default("BFC")
+  status    WalletStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([address])
+  @@map("wallets")
+  @@schema("wallets")
+}

@@ -1,0 +1,51 @@
+# Default-deny ingress, then explicit allows. Egress is left open (services need
+# Supabase (Postgres + Storage), Kafka, Redis, AWS APIs); tighten per environment if needed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: blockchain-fintech
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+# Allow the ALB (and in-namespace traffic) to reach the gateway + frontend.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-public-edge
+  namespace: blockchain-fintech
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [api-gateway, frontend] }
+  policyTypes: [Ingress]
+  ingress:
+    - {} # ALB target-type ip delivers from outside the cluster CIDR
+---
+# Allow the gateway to reach internal gRPC services; allow inter-service calls.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-internal-grpc
+  namespace: blockchain-fintech
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [auth, user, wallet, blockchain, transaction, notification, audit] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {} # any pod in this namespace (gateway + sibling services)
+      ports:
+        - { protocol: TCP, port: 50051 }
+        - { protocol: TCP, port: 50052 }
+        - { protocol: TCP, port: 50053 }
+        - { protocol: TCP, port: 50054 }
+        - { protocol: TCP, port: 50055 }
+        - { protocol: TCP, port: 50056 }
+        - { protocol: TCP, port: 50057 }
+    # Allow Prometheus to scrape /metrics.
+    - from:
+        - namespaceSelector:
+            matchLabels: { name: observability }

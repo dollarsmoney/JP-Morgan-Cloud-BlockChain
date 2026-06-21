@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: blockchain-fintech
+  labels: { app: api-gateway, app.kubernetes.io/part-of: blockchain-fintech }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: api-gateway }
+  template:
+    metadata:
+      labels: { app: api-gateway }
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '4000'
+        prometheus.io/path: '/metrics'
+    spec:
+      serviceAccountName: bcf-app
+      securityContext: { runAsNonRoot: true, runAsUser: 1000, fsGroup: 1000 }
+      containers:
+        - name: api-gateway
+          image: ECR_REGISTRY/bcf-api-gateway:latest
+          ports:
+            - { name: http, containerPort: 4000 }
+          envFrom:
+            - configMapRef: { name: bcf-config }
+            - secretRef: { name: bcf-secrets }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 4000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 4000 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: '150m', memory: '256Mi' }
+            limits: { cpu: '750m', memory: '512Mi' }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ['ALL'] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: blockchain-fintech
+  labels: { app: api-gateway }
+spec:
+  type: ClusterIP
+  selector: { app: api-gateway }
+  ports:
+    - { name: http, port: 4000, targetPort: http }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-gateway
+  namespace: blockchain-fintech
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: api-gateway }
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 65 } }

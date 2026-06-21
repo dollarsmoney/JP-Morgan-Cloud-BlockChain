@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package audit;
+
+service AuditService {
+  rpc QueryLogs(QueryLogsRequest) returns (AuditLogList);
+}
+
+message AuditLog {
+  string id = 1;
+  string actor_id = 2;
+  string service = 3;
+  string action = 4;
+  string resource = 5;
+  string payload = 6;   // JSON string
+  string ip = 7;
+  string created_at = 8;
+}
+
+message QueryLogsRequest {
+  string actor_id = 1;   // optional
+  string service = 2;    // optional
+  string action = 3;     // optional
+  int32 page = 4;
+  int32 page_size = 5;
+}
+
+message AuditLogList {
+  repeated AuditLog logs = 1;
+  int32 total = 2;
+}

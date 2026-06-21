@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package user;
+
+service UserService {
+  rpc GetProfile(GetProfileRequest) returns (Profile);
+  rpc UpdateProfile(UpdateProfileRequest) returns (Profile);
+  rpc UploadAvatar(UploadAvatarRequest) returns (Profile);
+}
+
+message Profile {
+  string id = 1;
+  string user_id = 2;
+  string email = 3;
+  string first_name = 4;
+  string last_name = 5;
+  string avatar_url = 6;
+  string phone = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message GetProfileRequest {
+  string user_id = 1;
+}
+
+message UpdateProfileRequest {
+  string user_id = 1;
+  string first_name = 2;
+  string last_name = 3;
+  string phone = 4;
+}
+
+message UploadAvatarRequest {
+  string user_id = 1;
+  bytes image = 2;       // raw image bytes
+  string content_type = 3;
+}

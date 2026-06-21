@@ -1,0 +1,36 @@
+# AWS Load Balancer Controller (ALB) ingress. One ALB fronts both the public API
+# (api.<domain>) and the web app (app.<domain>).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bcf-ingress
+  namespace: blockchain-fintech
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:REGION:ACCOUNT_ID:certificate/CERT_ID
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=60
+spec:
+  rules:
+    - host: api.blockchain-fintech.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port: { number: 4000 }
+    - host: app.blockchain-fintech.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port: { number: 3000 }

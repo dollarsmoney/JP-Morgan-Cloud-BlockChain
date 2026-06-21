@@ -1,0 +1,44 @@
+// Transaction service — owns the `transactions` Postgres schema in Supabase.
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("TRANSACTION_DATABASE_URL")
+  directUrl = env("TRANSACTION_DIRECT_URL")
+  schemas   = ["transactions"]
+}
+
+enum TxStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+
+  @@schema("transactions")
+}
+
+model Transaction {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  fromAddress String    @map("from_address")
+  toAddress   String    @map("to_address")
+  amount      Decimal   @db.Decimal(36, 18)
+  fee         Decimal   @default(0) @db.Decimal(36, 18)
+  status      TxStatus  @default(PENDING)
+  txHash      String    @unique @map("tx_hash")
+  blockIndex  Int?      @map("block_index")
+  failureReason String? @map("failure_reason")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  confirmedAt DateTime? @map("confirmed_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@index([txHash])
+  @@index([fromAddress])
+  @@map("transactions")
+  @@schema("transactions")
+}

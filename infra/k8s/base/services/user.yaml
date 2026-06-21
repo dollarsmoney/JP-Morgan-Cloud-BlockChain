@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user
+  namespace: blockchain-fintech
+  labels: { app: user, app.kubernetes.io/part-of: blockchain-fintech }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: user }
+  template:
+    metadata:
+      labels: { app: user }
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '5052'
+        prometheus.io/path: '/metrics'
+    spec:
+      serviceAccountName: bcf-app
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+        - name: user
+          image: ECR_REGISTRY/bcf-user:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { name: grpc, containerPort: 50052 }
+            - { name: http, containerPort: 5052 }
+          envFrom:
+            - configMapRef: { name: bcf-config }
+            - secretRef: { name: bcf-secrets }
+          readinessProbe:
+            httpGet: { path: /readyz, port: 5052 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: 5052 }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: '100m', memory: '192Mi' }
+            limits: { cpu: '500m', memory: '512Mi' }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ['ALL'] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user
+  namespace: blockchain-fintech
+  labels: { app: user }
+spec:
+  type: ClusterIP
+  selector: { app: user }
+  ports:
+    - { name: grpc, port: 50052, targetPort: grpc }
+    - { name: http, port: 5052, targetPort: http }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: user
+  namespace: blockchain-fintech
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: user }
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+    - type: Resource
+      resource: { name: memory, target: { type: Utilization, averageUtilization: 80 } }
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300

@@ -1,0 +1,29 @@
+groups:
+  - name: blockchain-fintech-alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Service {{ $labels.job }} ({{ $labels.instance }}) is down'
+
+      - alert: HighHttpErrorRate
+        expr: |
+          sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m])) by (service)
+            / sum(rate(http_request_duration_seconds_count[5m])) by (service) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'High 5xx error rate on {{ $labels.service }}'
+
+      - alert: HighRequestLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'p95 latency above 1s on {{ $labels.service }}'

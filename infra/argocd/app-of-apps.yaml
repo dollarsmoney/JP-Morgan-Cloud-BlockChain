@@ -1,0 +1,22 @@
+# Root "app of apps" — ArgoCD watches infra/argocd/apps and creates each child
+# Application it finds there.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blockchain-fintech-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: blockchain-fintech
+  source:
+    repoURL: https://github.com/YOUR_ORG/blockchain-fintech.git
+    targetRevision: main
+    path: infra/argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

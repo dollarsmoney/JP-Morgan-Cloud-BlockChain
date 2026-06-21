@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package common;
+
+message Empty {}
+
+message Pagination {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message PageMeta {
+  int32 page = 1;
+  int32 page_size = 2;
+  int32 total = 3;
+}
+
+// Authenticated principal carried in gRPC metadata, mirrored here for clarity.
+message AuthContext {
+  string user_id = 1;
+  string email = 2;
+  string role = 3; // USER | ADMIN
+}

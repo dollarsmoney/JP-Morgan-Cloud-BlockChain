@@ -1,0 +1,29 @@
+// Notification service — owns the `notifications` Postgres schema in Supabase.
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("NOTIFICATION_DATABASE_URL")
+  directUrl = env("NOTIFICATION_DIRECT_URL")
+  schemas   = ["notifications"]
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([userId, read])
+  @@map("notifications")
+  @@schema("notifications")
+}

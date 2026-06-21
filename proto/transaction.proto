@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package transaction;
+
+service TransactionService {
+  rpc CreateTransaction(CreateTxRequest) returns (Transaction);
+  rpc GetTransaction(GetTxRequest) returns (Transaction);
+  rpc ListHistory(ListHistoryRequest) returns (TransactionList);
+  rpc GetStatus(GetStatusRequest) returns (StatusResponse);
+}
+
+message Transaction {
+  string id = 1;
+  string user_id = 2;
+  string from_address = 3;
+  string to_address = 4;
+  string amount = 5;
+  string fee = 6;
+  string status = 7;        // PENDING | CONFIRMED | FAILED
+  string tx_hash = 8;
+  int32 block_index = 9;
+  string created_at = 10;
+  string confirmed_at = 11;
+}
+
+message CreateTxRequest {
+  string user_id = 1;
+  string from_address = 2;
+  string to_address = 3;
+  string amount = 4;
+  string fee = 5;
+}
+
+message GetTxRequest {
+  string user_id = 1;
+  string transaction_id = 2;
+}
+
+message ListHistoryRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  string status = 4;        // optional filter
+}
+
+message TransactionList {
+  repeated Transaction transactions = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message GetStatusRequest {
+  string user_id = 1;
+  string transaction_id = 2;
+}
+
+message StatusResponse {
+  string transaction_id = 1;
+  string status = 2;
+  int32 confirmations = 3;
+}

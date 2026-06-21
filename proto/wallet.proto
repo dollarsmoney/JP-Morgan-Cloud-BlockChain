@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package wallet;
+
+service WalletService {
+  rpc CreateWallet(CreateWalletRequest) returns (Wallet);
+  rpc ListWallets(ListWalletsRequest) returns (WalletList);
+  rpc GetWallet(GetWalletRequest) returns (Wallet);
+  rpc GetBalance(GetBalanceRequest) returns (Balance);
+}
+
+message Wallet {
+  string id = 1;
+  string user_id = 2;
+  string address = 3;
+  string public_key = 4;
+  string label = 5;
+  string balance = 6;   // decimal as string to avoid float drift
+  string currency = 7;
+  string status = 8;
+  string created_at = 9;
+}
+
+message CreateWalletRequest {
+  string user_id = 1;
+  string label = 2;
+  string currency = 3;
+}
+
+message ListWalletsRequest {
+  string user_id = 1;
+}
+
+message WalletList {
+  repeated Wallet wallets = 1;
+}
+
+message GetWalletRequest {
+  string user_id = 1;
+  string wallet_id = 2;
+}
+
+message GetBalanceRequest {
+  string address = 1;
+}
+
+message Balance {
+  string address = 1;
+  string balance = 2;
+  string currency = 3;
+}

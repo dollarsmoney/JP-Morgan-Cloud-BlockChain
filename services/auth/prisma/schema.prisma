@@ -1,0 +1,63 @@
+// Auth service — owns the `app_auth` Postgres schema in Supabase.
+// NOTE: `auth` is reserved by Supabase (GoTrue), so this service uses `app_auth`.
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("AUTH_DATABASE_URL")
+  directUrl = env("AUTH_DIRECT_URL")
+  schemas   = ["app_auth"]
+}
+
+enum Role {
+  USER
+  ADMIN
+
+  @@schema("app_auth")
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+
+  @@schema("app_auth")
+}
+
+model Credential {
+  id           String        @id @default(uuid())
+  userId       String        @unique @map("user_id")
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         Role          @default(USER)
+  status       AccountStatus @default(ACTIVE)
+  lastLoginAt  DateTime?     @map("last_login_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@map("credentials")
+  @@schema("app_auth")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  jti       String   @unique
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  credential Credential @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+  @@schema("app_auth")
+}

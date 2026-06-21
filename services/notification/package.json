@@ -1,0 +1,28 @@
+{
+  "name": "@blockchain/notification-service",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "dotenv -e ../../.env -- tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "jest --passWithNoTests",
+    "prisma:generate": "dotenv -e ../../.env -- prisma generate",
+    "db:migrate": "dotenv -e ../../.env -- prisma migrate deploy",
+    "db:migrate:dev": "dotenv -e ../../.env -- prisma migrate dev",
+    "clean": "rimraf dist src/generated"
+  },
+  "dependencies": {
+    "@blockchain/common": "*",
+    "@grpc/grpc-js": "^1.10.9",
+    "@prisma/client": "^5.18.0",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "prisma": "^5.18.0",
+    "tsx": "^4.16.2"
+  }
+}

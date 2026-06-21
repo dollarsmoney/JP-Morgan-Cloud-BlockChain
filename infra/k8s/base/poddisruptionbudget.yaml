@@ -1,0 +1,22 @@
+# Keep at least one replica available during voluntary disruptions (node drains).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bcf-edge-pdb
+  namespace: blockchain-fintech
+spec:
+  minAvailable: 1
+  selector:
+    matchExpressions:
+      - { key: app, operator: In, values: [api-gateway, frontend] }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bcf-services-pdb
+  namespace: blockchain-fintech
+spec:
+  minAvailable: 1
+  selector:
+    matchExpressions:
+      - { key: app, operator: In, values: [auth, user, wallet, blockchain, transaction, notification, audit] }

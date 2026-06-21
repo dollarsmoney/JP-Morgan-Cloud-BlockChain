@@ -1,0 +1,27 @@
+# Least-privilege Role for app pods: read-only access to their own config.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: bcf-app-role
+  namespace: blockchain-fintech
+rules:
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get', 'list']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bcf-app-rolebinding
+  namespace: blockchain-fintech
+subjects:
+  - kind: ServiceAccount
+    name: bcf-app
+    namespace: blockchain-fintech
+roleRef:
+  kind: Role
+  name: bcf-app-role
+  apiGroup: rbac.authorization.k8s.io

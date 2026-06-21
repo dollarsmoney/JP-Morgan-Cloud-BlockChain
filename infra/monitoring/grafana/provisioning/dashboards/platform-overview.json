@@ -1,0 +1,57 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 0,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Services Up",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "expr": "count(up == 1)", "refId": "A" }]
+    },
+    {
+      "type": "timeseries",
+      "title": "HTTP Request Rate (by service)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [
+        { "expr": "sum(rate(http_request_duration_seconds_count[5m])) by (service)", "refId": "A", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "p95 Latency (by service)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service))", "refId": "A", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Business Events (tx created/confirmed, blocks mined)",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "sum(rate(business_events_total[5m])) by (name)", "refId": "A", "legendFormat": "{{name}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Kafka Events Consumed",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "sum(rate(kafka_events_consumed_total[5m])) by (topic, type)", "refId": "A", "legendFormat": "{{topic}}/{{type}}" }
+      ]
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["blockchain-fintech"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Platform Overview",
+  "uid": "platform-overview",
+  "version": 1
+}

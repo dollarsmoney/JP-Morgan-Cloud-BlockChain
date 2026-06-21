@@ -1,0 +1,45 @@
+{
+  "name": "blockchain-fintech-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-grade blockchain transaction platform (microservices + Next.js)",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "frontend"
+  ],
+  "overrides": {
+    "@types/express": "^4.17.21"
+  },
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "build:common": "npm run build -w @blockchain/common",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint \"{packages,services}/**/src/**/*.ts\"",
+    "lint:fix": "eslint \"{packages,services}/**/src/**/*.ts\" --fix",
+    "format": "prettier --write \"{packages,services}/**/src/**/*.{ts,json}\"",
+    "test": "npm run test --workspaces --if-present",
+    "prisma:generate": "npm run prisma:generate --workspaces --if-present",
+    "db:migrate:all": "npm run db:migrate -w services/auth && npm run db:migrate -w services/user && npm run db:migrate -w services/wallet && npm run db:migrate -w services/blockchain && npm run db:migrate -w services/transaction && npm run db:migrate -w services/notification && npm run db:migrate -w services/audit",
+    "dev:infra": "docker compose up -d redis zookeeper kafka jaeger prometheus grafana loki",
+    "dev:down": "docker compose down",
+    "compose:up": "docker compose up --build",
+    "clean": "rimraf \"{packages,services}/**/dist\" \"{packages,services}/**/node_modules\" node_modules"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
+    "dotenv-cli": "^7.4.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.2",
+    "rimraf": "^5.0.7",
+    "typescript": "^5.4.5"
+  }
+}
